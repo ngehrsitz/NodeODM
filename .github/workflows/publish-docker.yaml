@@ -56,7 +56,7 @@ jobs:
         with:
           images: |
             ghcr.io/${{ github.repository }}
-            ${{ env.DOCKERHUB_CREDENTIALS_AVAILABLE == 'true' && 'opendronemap/nodeodm' || '' }}
+            ${{ env.DOCKERHUB_CREDENTIALS_AVAILABLE == 'true' && 'ngrsdhbw/nodeodm' || '' }}
           # semver tag is only generated for the cpu version
           tags: |
             ${{ matrix.variant.tag == 'latest' && 'type=semver,pattern={{version}}' || '' }}
