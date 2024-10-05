@@ -69,6 +69,7 @@ jobs:
           # exporting is only supported for the native platform
           # without setting the platform caching won´t work
           platforms: linux/amd64
+          cache-to: type=gha,mode=max
           load: true
           labels: ${{ steps.docker_meta.outputs.labels }}
           tags: ${{ steps.docker_meta.outputs.tags }}
@@ -80,6 +81,7 @@ jobs:
         with:
           file: ${{ matrix.variant.dockerfile }}
           platforms: ${{ matrix.variant.platforms }}
+          cache-from: type=gha
           push: ${{ github.event_name != 'pull_request' }}
           labels: ${{ steps.docker_meta.outputs.labels }}
           tags: ${{ steps.docker_meta.outputs.tags }}
