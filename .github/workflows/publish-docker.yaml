@@ -12,6 +12,18 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        variant:
+          - dockerfile: ./Dockerfile
+            platforms: linux/amd64,linux/arm64
+            tag: latest
+          - dockerfile: ./Dockerfile.gpu
+            platforms: linux/amd64
+            tag: gpu
+          - dockerfile: ./Dockerfile.gpu.intel
+            platforms: linux/amd64
+            tags: gpu.intel
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -37,9 +49,9 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v2
         with:
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
+          file: ${{ matrix.variant.dockerfile }}
+          platforms: ${{ matrix.variant.platforms }}
           push: true
           tags: |
-            ${{ steps.docker_meta.outputs.tags }}
-            opendronemap/nodeodm:latest
+            ${{ matrix.variant.tag == 'latest' && steps.docker_meta.outputs.tags }}
+            opendronemap/nodeodm:${{ matrix.variant.tag }}
