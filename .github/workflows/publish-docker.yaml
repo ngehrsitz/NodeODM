@@ -1,4 +1,4 @@
-name: Publish Docker
+name: Build, Test and Publish Docker
 
 on:
   push:
@@ -6,12 +6,26 @@ on:
       - master
     tags:
       - v*
-  
+  pull_request:
+
   # Triggered by ODM build (after docker push)
   workflow_dispatch:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        variant:
+          - dockerfile: ./Dockerfile
+            platforms: linux/amd64,linux/arm64
+            tag: latest
+          - dockerfile: ./Dockerfile.gpu
+            platforms: linux/amd64
+            tag: gpu
+          - dockerfile: ./Dockerfile.gpu.intel
+            platforms: linux/amd64
+            tag: gpu.intel
+    name: build ${{ matrix.variant.dockerfile }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -33,13 +47,25 @@ jobs:
           images: opendronemap/nodeodm
           tag-semver: |
             {{version}}
-      - name: Build and push Docker image
+      - name: Build and export Docker image
         id: docker_build
         uses: docker/build-push-action@v2
         with:
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
+          file: ${{ matrix.variant.dockerfile }}
+          platforms: ${{ matrix.variant.platforms }}
+          load: true
           tags: |
-            ${{ steps.docker_meta.outputs.tags }}
-            opendronemap/nodeodm:latest
+            ${{ matrix.variant.tag == 'latest' && steps.docker_meta.outputs.tags || '' }}
+            opendronemap/nodeodm:${{ matrix.variant.tag }}
+      - name: Test Powercycle
+        run: |
+          docker run --rm opendronemap/nodeodm:${{ matrix.variant.tag }} --powercycle
+      - name: Push cached Docker image
+        uses: docker/build-push-action@v2
+        with:
+          file: ${{ matrix.variant.dockerfile }}
+          platforms: ${{ matrix.variant.platforms }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ matrix.variant.tag == 'latest' && steps.docker_meta.outputs.tags || '' }}
+            opendronemap/nodeodm:${{ matrix.variant.tag }}
